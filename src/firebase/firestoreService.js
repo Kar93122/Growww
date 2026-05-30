@@ -5,18 +5,20 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 
+// ─── Helper: fire-and-forget wrapper ─────────────────────────────────────────
+// Runs a promise in the background without blocking the UI thread.
+const fireAndForget = (promise) => { promise.catch(console.error); };
+
 // ─── User Profile ────────────────────────────────────────────────────────────
+// Self-healing: setDoc with merge:true creates the doc if missing, or merges if it exists.
+// No need to check snap.exists() — eliminates silent failures for older accounts.
 export const initUserDoc = async (uid, profile) => {
-  const ref = doc(db, 'users', uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      ...profile,
-      createdAt: serverTimestamp(),
-      theme: 'dark',
-    });
-    await initSimulatorAccount(uid);
-  }
+  await setDoc(doc(db, 'users', uid), {
+    ...profile,
+    createdAt: serverTimestamp(),
+    theme: 'dark',
+  }, { merge: true });
+  await initSimulatorAccount(uid);
 };
 
 export const getUserProfile = (uid) => getDoc(doc(db, 'users', uid));
@@ -154,6 +156,13 @@ export const saveStrategy = (uid, strategy) => {
 
 export const getStrategies = (uid) =>
   getDocs(query(collection(db, 'users', uid, 'strategies'), orderBy('updatedAt', 'desc')));
+
+// Real-time strategies subscription (replaces one-shot getStrategies for live pages)
+export const subscribeStrategies = (uid, callback) =>
+  onSnapshot(
+    query(collection(db, 'users', uid, 'strategies'), orderBy('updatedAt', 'desc')),
+    (snap) => callback(snap.docs.map((d) => d.data()))
+  );
 
 export const deleteStrategy = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'strategies', id));

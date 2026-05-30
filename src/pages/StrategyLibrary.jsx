@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getStrategies, deleteStrategy } from '../firebase/firestoreService';
+import { subscribeStrategies, deleteStrategy } from '../firebase/firestoreService';
 
 export default function StrategyLibrary() {
   const { currentUser } = useAuth();
@@ -9,25 +9,19 @@ export default function StrategyLibrary() {
   const [strategies, setStrategies] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadStrategies = async () => {
-    setLoading(true);
-    try {
-      const snap = await getStrategies(currentUser.uid);
-      setStrategies(snap.docs.map(d=>d.data()));
-    } catch (err) {
-      console.warn('Failed to load strategies:', err);
-      setStrategies([]);
-    } finally {
+  // Real-time subscription: auto-updates when strategies are added/deleted
+  useEffect(() => {
+    const unsub = subscribeStrategies(currentUser.uid, (data) => {
+      setStrategies(data);
       setLoading(false);
-    }
-  };
+    });
+    return unsub;
+  }, [currentUser.uid]);
 
-  useEffect(() => { loadStrategies(); }, [currentUser.uid]);
-
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!window.confirm('Delete this strategy?')) return;
-    await deleteStrategy(currentUser.uid, id);
-    loadStrategies();
+    // Fire-and-forget: the onSnapshot listener will auto-remove it from UI
+    deleteStrategy(currentUser.uid, id).catch(console.error);
   };
 
   return (

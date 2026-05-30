@@ -111,10 +111,10 @@ export default function MultiAssetChart() {
   const setAssetColor = (sym, color) => setAssets(prev => prev.map(a=>a.symbol===sym?{...a,color}:a));
   const setAssetChartType = (sym, ct) => setAssets(prev => prev.map(a=>a.symbol===sym?{...a,chartType:ct}:a));
 
-  const saveChart = async () => {
-    await saveMultiAssetChart(currentUser.uid, Date.now().toString(), {
+  const saveChart = () => {
+    saveMultiAssetChart(currentUser.uid, Date.now().toString(), {
       name: chartName, assets, timeframe, createdAt: new Date().toISOString()
-    });
+    }).catch(console.error);
   };
 
   // Correlation matrix

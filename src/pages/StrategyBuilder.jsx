@@ -123,8 +123,8 @@ export default function StrategyBuilder() {
     setBacktestResult(null);
   };
 
-  const handleSave = async () => {
-    await saveStrategy(currentUser.uid, {
+  const handleSave = () => {
+    saveStrategy(currentUser.uid, {
       name:stratName, description:stratDesc, indicators, rules,
       backtestResults: backtestResult ? {
         totalReturn:backtestResult.totalReturn,
@@ -132,7 +132,7 @@ export default function StrategyBuilder() {
         maxDrawdown:backtestResult.maxDrawdown,
         trades:backtestResult.totalTrades,
       } : null,
-    });
+    }).catch(console.error);
     setSaveMsg('✓ Saved to Strategy Library!');
     setTimeout(()=>setSaveMsg(''),3000);
   };
