@@ -15,6 +15,9 @@ import MultiAssetChart from './pages/MultiAssetChart';
 import StrategyBuilder from './pages/StrategyBuilder';
 import StrategyLibrary from './pages/StrategyLibrary';
 import Profile from './pages/Profile';
+import AlgoSandbox from './pages/AlgoSandbox';
+import Leaderboard from './pages/Leaderboard';
+import PriceAlerts from './pages/PriceAlerts';
 import './index.css';
 
 function AppLayout({ children }) {
@@ -51,6 +54,9 @@ export default function App() {
                     <Route path="/strategy" element={<StrategyBuilder />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/strategy-library" element={<StrategyLibrary />} />
+                    <Route path="/algo-sandbox" element={<AlgoSandbox />} />
+                    <Route path="/leaderboard" element={<Leaderboard />} />
+                    <Route path="/alerts" element={<PriceAlerts />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </AppLayout>

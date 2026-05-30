@@ -166,3 +166,83 @@ export const subscribeStrategies = (uid, callback) =>
 
 export const deleteStrategy = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'strategies', id));
+
+// ─── Leaderboard ──────────────────────────────────────────────────────────────
+export const publishToLeaderboard = async (uid, displayName) => {
+  // Fetch live account + holdings data then write to public leaderboard
+  const [accountSnap, holdingsSnap] = await Promise.all([
+    getDoc(doc(db, 'users', uid, 'simulator', 'account')),
+    getDocs(collection(db, 'users', uid, 'simulator', 'holdings', 'items')),
+  ]);
+  const account = accountSnap.exists() ? accountSnap.data() : { cashBalance: 1000000, initialCapital: 1000000 };
+  const holdings = holdingsSnap.docs.map(d => d.data());
+  const holdingValue = holdings.reduce((sum, h) => sum + (h.qty * h.avgCostBasis), 0);
+  const totalValue = account.cashBalance + holdingValue;
+  const totalReturn = parseFloat((((totalValue - account.initialCapital) / account.initialCapital) * 100).toFixed(2));
+
+  return setDoc(doc(db, 'leaderboard', uid), {
+    uid,
+    displayName,
+    cashBalance: account.cashBalance,
+    totalValue,
+    totalReturn,
+    holdingCount: holdings.length,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+};
+
+export const subscribeLeaderboard = (callback) =>
+  onSnapshot(
+    query(collection(db, 'leaderboard'), orderBy('totalReturn', 'desc'), limit(50)),
+    (snap) => callback(snap.docs.map(d => d.data()))
+  );
+
+export const getLeaderboardHoldings = async (uid) => {
+  const snap = await getDocs(collection(db, 'users', uid, 'simulator', 'holdings', 'items'));
+  return snap.docs.map(d => d.data());
+};
+
+export const copyTradePortfolio = async (myUid, sourceUid) => {
+  const batch = writeBatch(db);
+  // Reset my account to match source holdings
+  const [sourceAccount, sourceHoldings, myHoldings, myTrades] = await Promise.all([
+    getDoc(doc(db, 'users', sourceUid, 'simulator', 'account')),
+    getDocs(collection(db, 'users', sourceUid, 'simulator', 'holdings', 'items')),
+    getDocs(collection(db, 'users', myUid, 'simulator', 'holdings', 'items')),
+    getDocs(collection(db, 'users', myUid, 'simulator', 'trades', 'log')),
+  ]);
+  // Clear my existing holdings & trades
+  myHoldings.docs.forEach(d => batch.delete(d.ref));
+  myTrades.docs.forEach(d => batch.delete(d.ref));
+  // Copy source account balance
+  const srcAcc = sourceAccount.exists() ? sourceAccount.data() : { cashBalance: 1000000, initialCapital: 1000000 };
+  batch.set(doc(db, 'users', myUid, 'simulator', 'account'), {
+    cashBalance: srcAcc.cashBalance,
+    initialCapital: 1000000,
+    totalDeposited: 1000000,
+    createdAt: serverTimestamp(),
+  });
+  // Copy source holdings to my account
+  sourceHoldings.docs.forEach(d => {
+    const holding = d.data();
+    batch.set(doc(db, 'users', myUid, 'simulator', 'holdings', 'items', holding.symbol), holding, { merge: true });
+  });
+  return batch.commit();
+};
+
+// ─── Price Alerts ─────────────────────────────────────────────────────────────
+export const addAlert = (uid, alert) =>
+  setDoc(doc(collection(db, 'users', uid, 'priceAlerts')), {
+    ...alert,
+    createdAt: serverTimestamp(),
+  });
+
+export const subscribeAlerts = (uid, callback) =>
+  onSnapshot(
+    query(collection(db, 'users', uid, 'priceAlerts'), orderBy('createdAt', 'desc')),
+    (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  );
+
+export const deleteAlert = (uid, id) =>
+  deleteDoc(doc(db, 'users', uid, 'priceAlerts', id));
+
