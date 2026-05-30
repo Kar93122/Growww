@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChange } from '../firebase/authService';
-import { getUserProfile } from '../firebase/firestoreService';
+import { subscribeUserProfile } from '../firebase/firestoreService';
 
 const AuthContext = createContext(null);
 
@@ -10,6 +10,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubProfile = null;
+    
     const unsub = onAuthStateChange((user) => {
       setCurrentUser(user);
       setLoading(false); // Instantly unblock the UI!
@@ -21,20 +23,20 @@ export const AuthProvider = ({ children }) => {
           photoURL: user.photoURL || ''
         });
 
-        getUserProfile(user.uid)
-          .then((snap) => {
-            if (snap.exists()) {
-              setUserProfile(snap.data());
-            }
-          })
-          .catch((err) => {
-            console.warn('Failed to load user profile (offline?):', err);
-          });
+        if (unsubProfile) unsubProfile();
+        unsubProfile = subscribeUserProfile(user.uid, (data) => {
+          setUserProfile(data);
+        });
       } else {
         setUserProfile(null);
+        if (unsubProfile) unsubProfile();
       }
     });
-    return unsub;
+    
+    return () => {
+      unsub();
+      if (unsubProfile) unsubProfile();
+    };
   }, []);
 
   return (

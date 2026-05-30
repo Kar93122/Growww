@@ -21,8 +21,13 @@ export const initUserDoc = async (uid, profile) => {
 
 export const getUserProfile = (uid) => getDoc(doc(db, 'users', uid));
 
+export const subscribeUserProfile = (uid, callback) =>
+  onSnapshot(doc(db, 'users', uid), (snap) => {
+    if (snap.exists()) callback(snap.data());
+  });
+
 export const updateUserProfile = (uid, data) =>
-  updateDoc(doc(db, 'users', uid), data);
+  setDoc(doc(db, 'users', uid), data, { merge: true });
 
 // ─── Preferences ─────────────────────────────────────────────────────────────
 export const getPreferences = (uid) =>
