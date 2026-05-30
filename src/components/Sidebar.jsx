@@ -22,7 +22,6 @@ const NAV_ITEMS = [
       { path: '/multi-chart', icon: ChartIcon, label: 'Multi-Chart' },
       { path: '/strategy', icon: CogIcon, label: 'Strategy Builder' },
       { path: '/strategy-library', icon: BookIcon, label: 'My Strategies' },
-      { path: '/algo-sandbox', icon: FlaskIcon, label: 'Algo Sandbox', badge: 'NEW' },
     ],
   },
   {
@@ -137,13 +136,6 @@ function BookIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-    </svg>
-  );
-}
-function FlaskIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 3h6M9 3v6l-4 9a1 1 0 0 0 .9 1.45h12.2A1 1 0 0 0 19 18l-4-9V3"/>
     </svg>
   );
 }
